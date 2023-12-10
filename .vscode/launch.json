@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug my_regex_project",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/my_regex_project",
+      "args": ["-f", "input.txt","-r","[a-z]+"],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
