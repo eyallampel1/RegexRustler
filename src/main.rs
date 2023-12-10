@@ -1,27 +1,9 @@
 // main.rs
-use std::{env, io};
-use RegexRustler::process_file;
-use clap::{command, Arg};
-fn main() -> io::Result<()> {
-    let matches= command!().about("Searches(and colors) for a regex pattern in a text file")
-    .arg(
-        Arg::new("file-path")
-        .short('f')
-        .long("path")
-        .aliases(["fpath", "path", "text-file","file"])
-        .value_name("FILE")
-        .required(true)
-        .help("Path to the Text file to search for example: /home/user/text.txt")
-    )   
-    .arg(
-        Arg::new("regex-pattern")
-        .short('r')
-        .long("regex")
-        .value_name("REGEX")
-        .required(true)
-        .help("Regex pattern to match for example: [a-z]")
-    )
-        .get_matches();
+use regex_rustler::parser::parse_args;
+use regex_rustler::process_file;
+use std::io;
 
-    process_file(matches.get_one::<String>("file-path").unwrap(), matches.get_one::<String>("regex-pattern").unwrap())
+fn main() -> io::Result<()> {
+    let config = parse_args();
+    process_file(&config.file_path, &config.regex_pattern)
 }

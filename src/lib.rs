@@ -1,8 +1,9 @@
 // lib.rs
-use regex::Regex;
-use std::io::{self, BufRead, BufReader};
 use colored::*;
+use regex::Regex;
 use std::fs::File;
+use std::io::{self, BufRead, BufReader};
+pub mod parser;
 
 pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
     let file = File::open(file_path)?;
