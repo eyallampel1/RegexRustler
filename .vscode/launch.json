@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug my_regex_project",
+      "name": "Debug regex_rustler",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/target/debug/my_regex_project",
+      "program": "${workspaceFolder}/target/debug/regex_rustler",
       "args": ["-f", "input.txt","-r","[a-z]+"],
       "cwd": "${workspaceFolder}"
     }
