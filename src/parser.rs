@@ -12,7 +12,7 @@ pub fn parse_args() -> Config {
         .about("Searches (and colors) for a regex pattern in a text file")
         .arg(
             Arg::new("file-path")
-                .short('f')
+                .short('p')
                 .long("path")
                 .aliases(&["fpath", "path", "text-file", "file"])
                 .value_name("FILE")
