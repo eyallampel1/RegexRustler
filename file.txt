@@ -1,1 +1,3 @@
 hello i am
+Rust: safe, fast, productive. Pick three.
+Hello World Rust Programming

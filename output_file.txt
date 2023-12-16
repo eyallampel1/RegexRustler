@@ -1,0 +1,120 @@
+main.rs:
+// main.rs
+use regex_rustler::parser::parse_args;
+use regex_rustler::process_file;
+use std::io;
+
+fn main() -> io::Result<()> {
+    let config = parse_args();
+    process_file(&config.file_path, &config.regex_pattern)
+}
+
+
+lib.rs:
+// In lib.rs
+use crate::processor::process_regex;
+use fancy_regex::Regex;
+//use regex::Regex;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
+
+pub mod parser;
+pub mod processor;
+
+pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
+    let regex = Regex::new(regex_pattern).unwrap();
+
+    let mut toggle = false;
+
+    for line in reader.lines() {
+        let line = line?;
+        let processed_line = process_regex(&line, &regex, &mut toggle)?;
+        println!("{}", processed_line);
+    }
+
+    Ok(())
+}
+
+
+processor.rs:
+// In processor.rs
+use colored::*;
+use fancy_regex::Regex;
+use std::io;
+
+pub fn process_regex(line: &str, regex: &Regex, toggle: &mut bool) -> io::Result<String> {
+    let mut new_line = String::new();
+    let mut last = 0;
+
+    // Iterate over the matches and handle each Result item
+    let matches = regex.find_iter(line);
+    for match_result in matches {
+        match match_result {
+            Ok(mat) => {
+                // Process each match
+                new_line.push_str(&line[last..mat.start()]);
+                let matched = if *toggle {
+                    mat.as_str().red().to_string()
+                } else {
+                    mat.as_str().blue().to_string()
+                };
+                *toggle = !*toggle;
+                new_line.push_str(&matched);
+                last = mat.end();
+            }
+            Err(e) => {
+                // Handle any errors that occurred during matching
+                return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+            }
+        }
+    }
+
+    new_line.push_str(&line[last..]);
+    Ok(new_line)
+}
+
+
+config.rs:
+
+
+parser.rs:
+// src/parser.rs
+use clap::{command, Arg};
+
+pub struct Config {
+    pub file_path: String,
+    pub regex_pattern: String,
+}
+
+pub fn parse_args() -> Config {
+    let matches = command!()
+        .author("Eyal Lampel")
+        .about("Searches (and colors) for a regex pattern in a text file")
+        .arg(
+            Arg::new("file-path")
+                .short('p')
+                .long("path")
+                .aliases(&["fpath", "path", "text-file", "file"])
+                .value_name("FILE")
+                .required(true)
+                .help("Path to the Text file to search for example: /home/user/text.txt"),
+        )
+        .arg(
+            Arg::new("regex-pattern")
+                .short('r')
+                .long("regex")
+                .value_name("REGEX")
+                .required(true)
+                .help("Regex pattern to match for example: [a-z]"),
+        )
+        .get_matches();
+
+    Config {
+        file_path: matches.get_one::<String>("file-path").unwrap().clone(),
+        regex_pattern: matches.get_one::<String>("regex-pattern").unwrap().clone(),
+    }
+}
+
+

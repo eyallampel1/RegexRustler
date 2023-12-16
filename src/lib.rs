@@ -1,6 +1,7 @@
 // In lib.rs
 use crate::processor::process_regex;
-use regex::Regex;
+use fancy_regex::Regex;
+//use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
