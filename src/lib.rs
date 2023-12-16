@@ -1,8 +1,11 @@
-// lib.rs
-use colored::*;
+// In lib.rs
+use crate::processor::process_regex;
 use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+
+pub mod parser;
+pub mod processor;
 
 pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
     let file = File::open(file_path)?;
@@ -13,23 +16,8 @@ pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
 
     for line in reader.lines() {
         let line = line?;
-        let mut new_line = String::new();
-        let mut last = 0;
-
-        for mat in regex.find_iter(&line) {
-            new_line.push_str(&line[last..mat.start()]);
-            let matched = if toggle {
-                mat.as_str().red().to_string()
-            } else {
-                mat.as_str().blue().to_string()
-            };
-            toggle = !toggle;
-            new_line.push_str(&matched);
-            last = mat.end();
-        }
-
-        new_line.push_str(&line[last..]);
-        println!("{}", new_line);
+        let processed_line = process_regex(&line, &regex, &mut toggle)?;
+        println!("{}", processed_line);
     }
 
     Ok(())
