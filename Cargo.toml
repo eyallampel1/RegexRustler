@@ -12,6 +12,7 @@ colored = "2.0"
 clap = { version = "4.4.11", features = ["cargo"] }
 anyhow = "1.0.75"
 thiserror = "1.0.51"
+crossterm = "0.22"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"

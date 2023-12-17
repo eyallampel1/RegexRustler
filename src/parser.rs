@@ -1,10 +1,10 @@
 // src/parser.rs
-use anyhow::{anyhow, Result}; // Import Result from anyhow
-use clap::{command, Arg};
+use anyhow::{anyhow, Result};
+use clap::{command, Arg, ArgAction};
 
 pub struct Config {
     pub file_path: String,
-    pub regex_pattern: String,
+    pub regex_pattern: Option<String>,
     pub real_time: bool,
 }
 
@@ -26,7 +26,7 @@ pub fn parse_args() -> Result<Config> {
                 .short('r')
                 .long("regex")
                 .value_name("REGEX")
-                .required(true)
+                .required_unless_present("real-time-regex-testing")
                 .help("Regex pattern to match for example: [a-z]"),
         )
         .arg(
@@ -40,11 +40,8 @@ pub fn parse_args() -> Result<Config> {
                     "realTime",
                     "realTimeRegexTesting",
                 ])
-                .value_name("TEST")
-                .required(false)
-                .help("An argument to test your regex pattern in real time for example: [a-z]")
-                //.value_hint(value_hint)
-                .conflicts_with("regex-pattern"),
+                .action(ArgAction::SetTrue)
+                .help("Enter interactive mode for real-time regex testing"),
         )
         .get_matches();
 
@@ -54,12 +51,12 @@ pub fn parse_args() -> Result<Config> {
         .clone();
     let regex_pattern = matches
         .get_one::<String>("regex-pattern")
-        .ok_or_else(|| anyhow!("Regex pattern is required"))?
-        .clone();
+        .map(|s| s.to_string());
+    let real_time = matches.get_flag("real-time-regex-testing");
 
     Ok(Config {
         file_path,
         regex_pattern,
-        real_time: matches.args_present(),
+        real_time,
     })
 }
