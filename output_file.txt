@@ -12,31 +12,26 @@ fn main() -> io::Result<()> {
 
 lib.rs:
 // In lib.rs
+
 use crate::processor::process_regex;
+use anyhow::Result;
 use fancy_regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-
+pub mod errors;
 pub mod parser;
 pub mod processor;
+use errors::AppError;
 
-pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
-    let file = File::open(file_path)?;
+pub fn process_file(file_path: &str, regex_pattern: &str) -> Result<()> {
+    let file = File::open(file_path).map_err(AppError::FileReadError)?;
     let reader = BufReader::new(file);
-
-    // Handle the potential error from Regex::new()
-    let regex = match Regex::new(regex_pattern) {
-        Ok(regex) => regex,
-        Err(e) => {
-            eprintln!("Error compiling regex: {}", e);
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, e));
-        }
-    };
+    let regex = Regex::new(regex_pattern).map_err(AppError::RegexError)?;
 
     let mut toggle = false;
 
     for line in reader.lines() {
-        let line = line?;
+        let line = line.map_err(AppError::FileReadError)?;
         let processed_line = process_regex(&line, &regex, &mut toggle)?;
         println!("{}", processed_line);
     }
@@ -47,35 +42,30 @@ pub fn process_file(file_path: &str, regex_pattern: &str) -> io::Result<()> {
 
 processor.rs:
 // In processor.rs
+use crate::errors::AppError;
+use anyhow::Result;
 use colored::*;
 use fancy_regex::Regex;
-use std::io;
 
-pub fn process_regex(line: &str, regex: &Regex, toggle: &mut bool) -> io::Result<String> {
+pub fn process_regex(line: &str, regex: &Regex, toggle: &mut bool) -> Result<String> {
     let mut new_line = String::new();
     let mut last = 0;
 
     // Iterate over the matches and handle each Result item
     let matches = regex.find_iter(line);
     for match_result in matches {
-        match match_result {
-            Ok(mat) => {
-                // Process each match
-                new_line.push_str(&line[last..mat.start()]);
-                let matched = if *toggle {
-                    mat.as_str().red().to_string()
-                } else {
-                    mat.as_str().blue().to_string()
-                };
-                *toggle = !*toggle;
-                new_line.push_str(&matched);
-                last = mat.end();
-            }
-            Err(e) => {
-                // Handle any errors that occurred during matching
-                return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
-            }
-        }
+        let mat = match_result.map_err(AppError::RegexError)?;
+
+        // Process each match
+        new_line.push_str(&line[last..mat.start()]);
+        let matched = if *toggle {
+            mat.as_str().red().to_string()
+        } else {
+            mat.as_str().blue().to_string()
+        };
+        *toggle = !*toggle;
+        new_line.push_str(&matched);
+        last = mat.end();
     }
 
     new_line.push_str(&line[last..]);
@@ -86,17 +76,32 @@ pub fn process_regex(line: &str, regex: &Regex, toggle: &mut bool) -> io::Result
 config.rs:
 
 
+errors.rs:
+// errors.rs
+use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Error reading file: {0}")]
+    FileReadError(#[from] io::Error),
+
+    #[error("Error compiling regex: {0}")]
+    RegexError(#[from] fancy_regex::Error),
+}
+
+
 parser.rs:
 // src/parser.rs
+use anyhow::anyhow;
 use clap::{command, Arg};
-
 pub struct Config {
     pub file_path: String,
     pub regex_pattern: String,
     pub real_time: bool,
 }
 
-pub fn parse_args() -> Config {
+pub fn parse_args() -> Result<Config> {
     let matches = command!()
         .author("Eyal Lampel")
         .about("Searches (and colors) for a regex pattern in a text file")
@@ -136,11 +141,20 @@ pub fn parse_args() -> Config {
         )
         .get_matches();
 
-    Config {
-        file_path: matches.get_one::<String>("file-path").unwrap().clone(),
-        regex_pattern: matches.get_one::<String>("regex-pattern").unwrap().clone(),
+    let file_path = matches
+        .get_one::<String>("file-path")
+        .ok_or_else(|| anyhow!("File path is required"))?
+        .clone();
+    let regex_pattern = matches
+        .get_one::<String>("regex-pattern")
+        .ok_or_else(|| anyhow!("Regex pattern is required"))?
+        .clone();
+
+    Ok(Config {
+        file_path,
+        regex_pattern,
         real_time: matches.args_present(),
-    }
+    })
 }
 
 

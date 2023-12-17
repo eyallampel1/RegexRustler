@@ -1,4 +1,5 @@
 // src/parser.rs
+use anyhow::{anyhow, Result}; // Import Result from anyhow
 use clap::{command, Arg};
 
 pub struct Config {
@@ -7,7 +8,7 @@ pub struct Config {
     pub real_time: bool,
 }
 
-pub fn parse_args() -> Config {
+pub fn parse_args() -> Result<Config> {
     let matches = command!()
         .author("Eyal Lampel")
         .about("Searches (and colors) for a regex pattern in a text file")
@@ -47,9 +48,18 @@ pub fn parse_args() -> Config {
         )
         .get_matches();
 
-    Config {
-        file_path: matches.get_one::<String>("file-path").unwrap().clone(),
-        regex_pattern: matches.get_one::<String>("regex-pattern").unwrap().clone(),
+    let file_path = matches
+        .get_one::<String>("file-path")
+        .ok_or_else(|| anyhow!("File path is required"))?
+        .clone();
+    let regex_pattern = matches
+        .get_one::<String>("regex-pattern")
+        .ok_or_else(|| anyhow!("Regex pattern is required"))?
+        .clone();
+
+    Ok(Config {
+        file_path,
+        regex_pattern,
         real_time: matches.args_present(),
-    }
+    })
 }
