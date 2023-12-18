@@ -16,7 +16,7 @@ pub fn parse_args() -> Result<Config> {
             Arg::new("file-path")
                 .short('p')
                 .long("path")
-                .aliases(&["fpath", "path", "text-file", "file"])
+                .aliases(["fpath", "path", "text-file", "file"])
                 .value_name("FILE")
                 .required(true)
                 .help("Path to the Text file to search for example: /home/user/text.txt"),
@@ -33,7 +33,7 @@ pub fn parse_args() -> Result<Config> {
             Arg::new("real-time-regex-testing")
                 .short('t')
                 .long("realTime")
-                .aliases(&[
+                .aliases([
                     "rt",
                     "real-time",
                     "realtime",

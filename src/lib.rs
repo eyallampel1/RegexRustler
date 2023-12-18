@@ -4,7 +4,7 @@ use crate::processor::process_regex;
 use anyhow::Result;
 use fancy_regex::Regex;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 pub mod errors;
 pub mod parser;
 pub mod processor;
