@@ -8,6 +8,7 @@ use std::io::{BufRead, BufReader};
 pub mod errors;
 pub mod parser;
 pub mod processor;
+pub mod real_time;
 use errors::AppError;
 
 pub fn process_file(file_path: &str, regex_pattern: &str) -> Result<()> {

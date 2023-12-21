@@ -1,7 +1,9 @@
 main.rs:
 use anyhow::Result;
+use fancy_regex::Regex;
 use regex_rustler::parser::parse_args;
 use regex_rustler::process_file;
+use std::fs;
 use std::io::Write;
 use std::io::{self, BufRead};
 
@@ -9,7 +11,7 @@ fn main() -> Result<()> {
     let config = parse_args()?;
 
     if config.real_time {
-        real_time_regex_testing()?;
+        real_time_regex_testing(&config.file_path)?;
     } else {
         // Handle the case when regex_pattern is None
         if let Some(regex_pattern) = &config.regex_pattern {
@@ -23,13 +25,11 @@ fn main() -> Result<()> {
 }
 
 use crossterm::{
+    cursor,
     event::{self, Event, KeyCode},
     execute,
-    terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use fancy_regex::Regex;
-use std::fs;
-use std::io::{self, Write};
 
 fn real_time_regex_testing(file_path: &str) -> Result<()> {
     let mut stdout = io::stdout();
@@ -54,10 +54,9 @@ fn real_time_regex_testing(file_path: &str) -> Result<()> {
             }
         }
 
-        // Clear screen and print current regex pattern
-        execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
+        // Clear screen and reset cursor position
+        execute!(stdout, Clear(ClearType::All), cursor::MoveTo(0, 0))?;
         writeln!(stdout, "Regex pattern: {}", regex_pattern)?;
-        stdout.flush()?;
 
         // Apply regex to the text and display it
         if let Ok(regex) = Regex::new(&regex_pattern) {
@@ -84,7 +83,7 @@ use crate::processor::process_regex;
 use anyhow::Result;
 use fancy_regex::Regex;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 pub mod errors;
 pub mod parser;
 pub mod processor;
@@ -104,6 +103,94 @@ pub fn process_file(file_path: &str, regex_pattern: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+
+config.rs:
+
+
+errors.rs:
+// errors.rs
+use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Error reading file: {0}")]
+    FileReadError(#[from] io::Error),
+
+    #[error("Error compiling regex: {0}")]
+    RegexError(#[from] fancy_regex::Error),
+}
+
+
+mod.rs:
+pub mod config;
+pub mod parser;
+pub mod processor;
+
+parser.rs:
+// src/parser.rs
+use anyhow::{anyhow, Result};
+use clap::{command, Arg, ArgAction};
+
+pub struct Config {
+    pub file_path: String,
+    pub regex_pattern: Option<String>,
+    pub real_time: bool,
+}
+
+pub fn parse_args() -> Result<Config> {
+    let matches = command!()
+        .author("Eyal Lampel")
+        .about("Searches (and colors) for a regex pattern in a text file")
+        .arg(
+            Arg::new("file-path")
+                .short('p')
+                .long("path")
+                .aliases(["fpath", "path", "text-file", "file"])
+                .value_name("FILE")
+                .required(true)
+                .help("Path to the Text file to search for example: /home/user/text.txt"),
+        )
+        .arg(
+            Arg::new("regex-pattern")
+                .short('r')
+                .long("regex")
+                .value_name("REGEX")
+                .required_unless_present("real-time-regex-testing")
+                .help("Regex pattern to match for example: [a-z]"),
+        )
+        .arg(
+            Arg::new("real-time-regex-testing")
+                .short('t')
+                .long("realTime")
+                .aliases([
+                    "rt",
+                    "real-time",
+                    "realtime",
+                    "realTime",
+                    "realTimeRegexTesting",
+                ])
+                .action(ArgAction::SetTrue)
+                .help("Enter interactive mode for real-time regex testing"),
+        )
+        .get_matches();
+
+    let file_path = matches
+        .get_one::<String>("file-path")
+        .ok_or_else(|| anyhow!("File path is required"))?
+        .clone();
+    let regex_pattern = matches
+        .get_one::<String>("regex-pattern")
+        .map(|s| s.to_string());
+    let real_time = matches.get_flag("real-time-regex-testing");
+
+    Ok(Config {
+        file_path,
+        regex_pattern,
+        real_time,
+    })
 }
 
 
@@ -137,89 +224,6 @@ pub fn process_regex(line: &str, regex: &Regex, toggle: &mut bool) -> Result<Str
 
     new_line.push_str(&line[last..]);
     Ok(new_line)
-}
-
-
-config.rs:
-
-
-errors.rs:
-// errors.rs
-use std::io;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum AppError {
-    #[error("Error reading file: {0}")]
-    FileReadError(#[from] io::Error),
-
-    #[error("Error compiling regex: {0}")]
-    RegexError(#[from] fancy_regex::Error),
-}
-
-
-parser.rs:
-// src/parser.rs
-use anyhow::{anyhow, Result};
-use clap::{command, Arg, ArgAction};
-
-pub struct Config {
-    pub file_path: String,
-    pub regex_pattern: Option<String>,
-    pub real_time: bool,
-}
-
-pub fn parse_args() -> Result<Config> {
-    let matches = command!()
-        .author("Eyal Lampel")
-        .about("Searches (and colors) for a regex pattern in a text file")
-        .arg(
-            Arg::new("file-path")
-                .short('p')
-                .long("path")
-                .aliases(&["fpath", "path", "text-file", "file"])
-                .value_name("FILE")
-                .required(true)
-                .help("Path to the Text file to search for example: /home/user/text.txt"),
-        )
-        .arg(
-            Arg::new("regex-pattern")
-                .short('r')
-                .long("regex")
-                .value_name("REGEX")
-                .required_unless_present("real-time-regex-testing")
-                .help("Regex pattern to match for example: [a-z]"),
-        )
-        .arg(
-            Arg::new("real-time-regex-testing")
-                .short('t')
-                .long("realTime")
-                .aliases(&[
-                    "rt",
-                    "real-time",
-                    "realtime",
-                    "realTime",
-                    "realTimeRegexTesting",
-                ])
-                .action(ArgAction::SetTrue)
-                .help("Enter interactive mode for real-time regex testing"),
-        )
-        .get_matches();
-
-    let file_path = matches
-        .get_one::<String>("file-path")
-        .ok_or_else(|| anyhow!("File path is required"))?
-        .clone();
-    let regex_pattern = matches
-        .get_one::<String>("regex-pattern")
-        .map(|s| s.to_string());
-    let real_time = matches.get_flag("real-time-regex-testing");
-
-    Ok(Config {
-        file_path,
-        regex_pattern,
-        real_time,
-    })
 }
 
 
