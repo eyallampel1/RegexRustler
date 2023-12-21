@@ -237,7 +237,7 @@ fn test_error_handling() -> Result<(), Box<dyn std::error::Error>> {
 
     // Assertions
     // Check if the error output contains the actual error message
-    let expected_error_message = "Error compiling regex: Invalid character class";
+    let expected_error_message = "Error compiling regex: Parsing error at position 4: Invalid character class";
     assert!(
         error_output.contains(expected_error_message),
         "Expected error message '{}', got: {}",

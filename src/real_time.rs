@@ -7,7 +7,8 @@ use crossterm::{
 };
 use fancy_regex::Regex;
 use std::fs;
-use std::io::{self, Write, BufRead};
+use std::io::{self, Write}; // mybe add BufRead
+
 use crate::processor;
 
 // Removed unused import
