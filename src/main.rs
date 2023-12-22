@@ -3,6 +3,8 @@ use regex_rustler::parser::parse_args;
 use regex_rustler::process_file;
 use regex_rustler::real_time::real_time_regex_testing;
 
+/// Entry point for the regex_rustler application.
+/// It parses arguments and decides whether to run real-time regex testing or process a file based on the provided configuration.
 fn main() -> Result<()> {
     let config = parse_args()?;
 

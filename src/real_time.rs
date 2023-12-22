@@ -1,3 +1,5 @@
+/// This module provides the functionality for real-time regex testing.
+/// It allows users to enter a regex pattern and see the matches as they type.
 use anyhow::Result;
 use crossterm::{
     cursor,

@@ -1,4 +1,7 @@
 // src/parser.rs
+/// This module handles parsing of command-line arguments using the clap library.
+/// It is used by the binary crate (src/main.rs).
+/// It is not used by the integration tests (tests/integration_test.rs).
 use anyhow::{anyhow, Result};
 use clap::{command, Arg, ArgAction};
 
@@ -8,6 +11,23 @@ pub struct Config {
     pub real_time: bool,
 }
 
+/// Parses arguments from the command line to create a Config object.
+/// It sets up the necessary options and flags for the application's CLI.
+/// # Returns
+/// * `Config` - A Config object that holds the parsed arguments.
+/// # Errors
+/// * `anyhow::Error` - An error indicating that the file path is required.
+/// * `anyhow::Error` - An error indicating that the regex pattern is required.
+/// # Examples
+/// ```
+/// use regex_rustler::parser::parse_args;
+/// use regex_rustler::parser::Config;
+/// 
+/// let config = parse_args().unwrap();
+/// assert_eq!(config.file_path, "test.txt");
+/// assert_eq!(config.regex_pattern, Some("[a-z]".to_string()));
+/// assert_eq!(config.real_time, false);
+/// ```
 pub fn parse_args() -> Result<Config> {
     let matches = command!()
         .author("Eyal Lampel")
